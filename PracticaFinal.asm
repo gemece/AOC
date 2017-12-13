@@ -14,6 +14,9 @@ main:
 	la $a2, Salida
 	li $v0, 8
 	syscall
+	la $a0, cadena
+	jal compruebaParentesis
+	beq $v0, 1, errorDeCaracter
 	la $a0, cadena #parametros de la funcion cambioFinCadena
 	jal cambioFinCadena
 	la $a0, cadena #parametros de la funcion pone_parentesis
@@ -35,19 +38,49 @@ main:
 	la $a0, B
 	li $v0,4
 	syscall
-finPrograma:
-	li $v0, 10
-	syscall
-
+	j finPrograma
+	
 errorDeCaracter:
 	la $a0, cadenaError
 	add $v0, $zero, 4
 	syscall
 	j finPrograma
 	
+			
+finPrograma:
+	li $v0, 10
+	syscall
+
+
 	
 	
 	
+#-----------------------------Metodo que comprueba que no sean puesto los parentesis mal----------------------------------------------------------------------------------
+compruebaParentesis:
+	add $t0, $zero, $a0
+	add $t1, $zero, $zero
+	add $t2, $zero, $zero
+buclePar:
+	lb $t3, 0($t0)
+	add $t0, $t0, 1
+	beq $t3, 40, izq
+	beq $t3, 41, dere
+	beq $t3, 0, exxit
+	j buclePar
+izq:
+	add $t1, $t1, 1
+	j buclePar
+dere:
+	add $t2, $t2, 1
+	j buclePar
+exxit:
+	beq $t1, $t2, esCorrecto
+	addi $v0, $zero,1
+esCorrecto: 
+	jr $ra
+	
+		
+				
 #-------Metodo que añade parentesis al principio y final de la cadena almacenada en memoria-----------------------------
 pone_parentesis:
 	add $t0, $a0, $zero
@@ -171,6 +204,12 @@ puente:
 	addi $t0, $t0, 1
 	j back
 saque_pila:
+	lb $t5, -1($t0)
+	beq $t5, 43, error	#+
+	beq $t5, 45, error	#-
+	beq $t5, 42, error	#*
+	beq $t5, 47, error	#/
+	beq $t5, 94, error	#^
 	lb $t5, 0($sp)
 	beq $t5, 40, pp4	#( parentesis izq porque en la pila nunca va haber un paréntesis derecha
 	beq $t5, 43, pp3	#+
@@ -196,8 +235,7 @@ operador:
 	beq $t3, 42, p2	#*
 	beq $t3, 47, p2	#/
 	beq $t3, 94, p1	#^
-	addi $v0, $zero, 1	#caracter eroneo
-	jr $ra
+	j error
 p3:
 	addi $t8, $zero, 3
 	slt $t9, $t1, $t8	#
@@ -308,10 +346,18 @@ eleva:
 	lw $t6, -8($t5)
 	lw $t7, -4($t5)
 	addi $t8, $zero,1
+	beqz $t7, elevado_cero
+	
 repetir:
 	mul $t8,$t8,$t6
 	sub $t7, $t7, 1
 	bnez $t7, repetir
+	sw $t8, -8($t5)
+	addi $t5, $t5, -4
+	addi $t0, $t0, 1
+	j backResuelve
+	
+elevado_cero:
 	sw $t8, -8($t5)
 	addi $t5, $t5, -4
 	addi $t0, $t0, 1
